@@ -31,11 +31,15 @@ DIRS=(
 )
 
 VIRTUALENV=".venv-ci-black"
-python3 -m virtualenv "${VIRTUALENV}"
+python3 -m venv "${VIRTUALENV}"
 source "${VIRTUALENV}/bin/activate"
 python -VV
 
 pip install black==25.1.0
 pip list
 
-exec black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+if [[ "$ACTION" == "--check" ]]; then
+    exec black --config=grpc-style-config.toml --check --diff "${DIRS[@]}"
+else
+    exec black --config=grpc-style-config.toml $ACTION "${DIRS[@]}"
+fi

@@ -16,8 +16,6 @@
 
 #include "src/core/xds/grpc/xds_http_filter_registry.h"
 
-#include <grpc/support/port_platform.h>
-
 #include <map>
 #include <utility>
 #include <variant>
@@ -25,8 +23,11 @@
 
 #include "envoy/extensions/filters/http/router/v3/router.upb.h"
 #include "envoy/extensions/filters/http/router/v3/router.upbdefs.h"
+#include "src/core/config/experiment_env_var.h"
 #include "src/core/util/grpc_check.h"
 #include "src/core/util/json/json.h"
+#include "src/core/util/sync.h"
+#include "src/core/xds/grpc/xds_http_composite_filter.h"
 #include "src/core/xds/grpc/xds_http_fault_filter.h"
 #include "src/core/xds/grpc/xds_http_gcp_authn_filter.h"
 #include "src/core/xds/grpc/xds_http_rbac_filter.h"
@@ -109,6 +110,20 @@ RefCountedPtr<const FilterConfig> XdsHttpRouterFilter::ParseOverrideConfig(
 // XdsHttpFilterRegistry
 //
 
+namespace {
+
+Mutex* g_mu = new Mutex;
+NoDestruct<absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()>>
+    g_http_filter_factory_factory ABSL_GUARDED_BY(*g_mu);
+
+}  // namespace
+
+void SetXdsHttpFilterFactoryForTest(
+    absl::AnyInvocable<std::unique_ptr<XdsHttpFilterImpl>()> factory) {
+  MutexLock lock(g_mu);
+  *g_http_filter_factory_factory = std::move(factory);
+}
+
 XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
   if (register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRouterFilter>());
@@ -116,6 +131,13 @@ XdsHttpFilterRegistry::XdsHttpFilterRegistry(bool register_builtins) {
     RegisterFilter(std::make_unique<XdsHttpRbacFilter>());
     RegisterFilter(std::make_unique<XdsHttpStatefulSessionFilter>());
     RegisterFilter(std::make_unique<XdsHttpGcpAuthnFilter>());
+    if (IsExperimentEnvVarEnabled("GRPC_EXPERIMENTAL_XDS_COMPOSITE_FILTER")) {
+      RegisterFilter(std::make_unique<XdsHttpCompositeFilter>());
+    }
+    MutexLock lock(g_mu);
+    if (*g_http_filter_factory_factory != nullptr) {
+      RegisterFilter((*g_http_filter_factory_factory)());
+    }
   }
 }
 
