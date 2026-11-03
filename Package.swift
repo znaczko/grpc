@@ -2457,6 +2457,7 @@ let package = Package(
         "src/cpp/common/alts_util.cc",
         "src/cpp/common/alts_context.cc",
         "src/cpp/common/insecure_create_auth_context.cc",
+        "src/cpp/latent_see/",
         "src/cpp/server/admin/",
         "src/cpp/server/channelz/",
         "src/cpp/server/csds/",
