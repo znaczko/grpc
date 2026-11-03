@@ -14,6 +14,14 @@ jobs:
       - name: Fetch the submodules Package.swift compiles
         run: git submodule update --init third_party/re2 third_party/cel-c
       - name: Show toolchain
-        run: swift --version
-      - name: Build gRPC and the SPM consumer test
-        run: swift build --build-tests
+        run: |
+          xcodebuild -version
+          swift --version
+      - name: List Xcode schemes for the package
+        run: xcodebuild -list
+      - name: Build gRPC-Package for iOS (as in build_one_example.sh)
+        run: |
+          xcodebuild build -scheme gRPC-Package \
+            -destination generic/platform=iOS \
+            -derivedDataPath Build/Build \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
