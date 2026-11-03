@@ -1,0 +1,19 @@
+# Temporary: builds gRPC with Swift Package Manager on macOS to check whether
+# changes to the spm-*-include symlinks break SPM consumers. Not intended to be
+# merged.
+name: SPM build check
+on: [push]
+permissions:
+  contents: read
+jobs:
+  spm-build:
+    runs-on: macos-latest
+    timeout-minutes: 180
+    steps:
+      - uses: actions/checkout@v7
+      - name: Fetch the submodules Package.swift compiles
+        run: git submodule update --init third_party/re2 third_party/cel-c
+      - name: Show toolchain
+        run: swift --version
+      - name: Build gRPC and the SPM consumer test
+        run: swift build --build-tests
