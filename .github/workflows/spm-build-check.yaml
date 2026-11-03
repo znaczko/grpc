@@ -25,3 +25,9 @@ jobs:
             -destination generic/platform=iOS \
             -derivedDataPath "$RUNNER_TEMP/DerivedData" \
             CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
+      - name: Build the SPM consumer test (test/spm_build) against the public headers
+        run: |
+          xcodebuild build-for-testing -scheme gRPC-Package \
+            -destination generic/platform=iOS \
+            -derivedDataPath "$RUNNER_TEMP/DerivedData" \
+            CODE_SIGN_IDENTITY="" CODE_SIGNING_REQUIRED=NO CODE_SIGNING_ALLOWED=NO
